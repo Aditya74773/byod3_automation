@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    environment {
+        // Task 2: Credentials and Environment
+        TF_IN_AUTOMATION = 'true'
+        TF_CLI_ARGS      = '-no-color'
+        
+        // Using your specific credential IDs
+        AWS_CREDS   = credentials('AWS_Aadii')
+        SSH_CRED_ID = 'Aadii_id'
+        
+        AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
+        AWS_SECRET_ACCESS_KEY = "${env.AWS_CREDS_PSW}"
+    }
+
+    stages {
+        // Task 3: Initialization & Inspection
+        stage('Terraform Init & Inspect') {
+            steps {
+                sh 'terraform init'
+                // Inspects the .tfvars file named after the branch (e.g., dev.tfvars)
+                sh "cat ${env.BRANCH_NAME}.tfvars"
+            }
+        }
+
+        // Task 4: Planning
+        stage('Terraform Plan') {
+            steps {
+                sh "terraform plan -var-file=${env.BRANCH_NAME}.tfvars"
+            }
+        }
+
+        // Task 5: Manual Approval Gate (Dev Only)
+        stage('Validate Apply') {
+            when {
+                branch 'dev'
+            }
+            steps {
+                input message: "Review the plan above. Do you want to proceed with Apply?", ok: "Proceed"
+            }
+        }
+    }
+}
