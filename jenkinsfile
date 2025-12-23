@@ -31,7 +31,7 @@ pipeline {
             }
         }
 
-        // Task 5: Manual Approval Gate (Dev Only)
+        // Task 5: Manual Approval Gatee (Dev Only)
         stage('Validate Apply') {
             when {
                 branch 'dev'
