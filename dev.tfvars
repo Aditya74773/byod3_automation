@@ -1,0 +1,1 @@
+bucket_name = "aadii-automation-dev-test"
