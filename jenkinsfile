@@ -7,31 +7,37 @@ pipeline {
         TF_CLI_ARGS      = '-no-color'
         
         // Using your specific credential IDs
-        AWS_CREDS   = credentials('AWS_Aadii')
+        // Note: credentials() helper works the same, but access variables differently in 'bat'
+        AWS_CREDS = credentials('AWS_Aadii')
         SSH_CRED_ID = 'Aadii_id'
-        
-        AWS_ACCESS_KEY_ID     = "${env.AWS_CREDS_USR}"
-        AWS_SECRET_ACCESS_KEY = "${env.AWS_CREDS_PSW}"
     }
 
     stages {
         // Task 3: Initialization & Inspection
         stage('Terraform Init & Inspect') {
             steps {
-                sh 'terraform init'
-                // Inspects the .tfvars file named after the branch (e.g., dev.tfvars)
-                sh "cat ${env.BRANCH_NAME}.tfvars"
+                // Use 'bat' for Windows
+                bat 'terraform init'
+                
+                // 'type' is the Windows equivalent of 'cat'
+                // Use %VARIABLE% syntax inside bat for environment variables
+                script {
+                    echo "Inspecting variables for branch: ${env.BRANCH_NAME}"
+                    bat "type ${env.BRANCH_NAME}.tfvars"
+                }
             }
         }
 
         // Task 4: Planning
         stage('Terraform Plan') {
             steps {
-                sh "terraform plan -var-file=${env.BRANCH_NAME}.tfvars"
+                // Passing the AWS keys directly from the environment
+                // In Windows 'bat', we use %VAR% instead of $VAR
+                bat "terraform plan -var-file=${env.BRANCH_NAME}.tfvars"
             }
         }
 
-        // Task 5: Manual Approval Gatee (Dev Only)
+        // Task 5: Manual Approval Gate (Dev Only)
         stage('Validate Apply') {
             when {
                 branch 'dev'
