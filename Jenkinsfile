@@ -86,15 +86,17 @@ pipeline {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Aadii']]) {
                     bat "terraform apply -var-file=${env.BRANCH_NAME}.tfvars -auto-approve -no-color"
                     script {
-                        def ipOut = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
-                        env.INSTANCE_IP = ipOut.split("\n")[-1].trim() 
-                        def idOut = bat(script: "terraform output -raw instance_id", returnStdout: true).trim()
-                        env.INSTANCE_ID = idOut.split("\n")[-1].trim()
+                        // Captures output and uses Regex to strip out hidden ANSI color characters
+                        def ipRaw = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
+                        env.INSTANCE_IP = ipRaw.replaceAll(/\u001B\[[;\\d]*m/, "").split('\n')[-1].trim()
+                        
+                        def idRaw = bat(script: "terraform output -raw instance_id", returnStdout: true).trim()
+                        env.INSTANCE_ID = idRaw.replaceAll(/\u001B\[[;\\d]*m/, "").split('\n')[-1].trim()
                         
                         echo "======================================"
                         echo "TASK 1: SUCCESS"
-                        echo "IP: ${env.INSTANCE_IP}"
-                        echo "ID: ${env.INSTANCE_ID}"
+                        echo "CLEANED IP: ${env.INSTANCE_IP}"
+                        echo "CLEANED ID: ${env.INSTANCE_ID}"
                         echo "======================================"
                     }
                 }
@@ -128,7 +130,7 @@ pipeline {
                 script {
                     echo "Starting Ansible Configuration via WSL..."
                     
-                    // Fix permissions for the private key in WSL
+                    // Fix permissions for the private key in WSL environment
                     bat "wsl chmod 400 Aadii_new.pem"
                     
                     // Run Installation Playbook
@@ -147,7 +149,7 @@ pipeline {
         stage('Task 5: Infrastructure Cleanup') {
             steps {
                 script {
-                    // This creates a button in Jenkins to confirm deletion
+                    // This creates a manual approval button in the Jenkins UI
                     def destroy = input(message: 'Do you want to destroy the infrastructure?', ok: 'Yes, Destroy')
                     if(destroy) {
                         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Aadii']]) {
