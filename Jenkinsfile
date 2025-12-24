@@ -95,13 +95,13 @@ pipeline {
         }
         stage('Task 4: Splunk Installation & Testing') {
             steps {
-                // Binding for 'SSH Username with private key'
-                withCredentials([sshUserPrivateKey(credentialsId: 'Aadii_new', keyFileVariable: 'SECURE_KEY')]) {
+                // CHANGED: Using 'file' because your credential is a 'Secret file'
+                withCredentials([file(credentialsId: 'Aadii_new', variable: 'SECURE_KEY')]) {
                     script {
-                        echo "Deploying Splunk using SSH key credentials..."
+                        echo "Deploying Splunk using Secret File credentials..."
                         bat """
                             @echo off
-                            :: Convert Windows path to WSL path so WSL can find the key
+                            :: Convert Windows path to WSL path
                             wsl cp \$(wslpath '${env.SECURE_KEY}') /tmp/Aadii_new.pem
                             wsl chmod 400 /tmp/Aadii_new.pem
                             
@@ -109,7 +109,7 @@ pipeline {
                             wsl ansible-playbook -i dynamic_inventory.ini playbooks/splunk.yml --private-key /tmp/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
                             wsl ansible-playbook -i dynamic_inventory.ini playbooks/test-splunk.yml --private-key /tmp/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
                             
-                            :: Cleanup the temporary key inside WSL
+                            :: Cleanup
                             wsl rm /tmp/Aadii_new.pem
                         """
                     }
