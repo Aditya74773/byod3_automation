@@ -12,7 +12,8 @@ provider "aws" {
 }
 
 resource "aws_security_group" "splunk_sg" {
-  name_prefix = "splunk-sg-"
+  # name_prefix allows unique IDs during recreation to prevent "Already Exists" errors
+  name_prefix = "splunk-sg-" 
   description = "Allow SSH and Splunk Web UI"
 
   lifecycle {
@@ -46,7 +47,7 @@ resource "aws_instance" "splunk_server" {
   instance_type = "t2.medium"           
   key_name      = "Aadii_new"
 
-  # --- MANDATORY FIX: Increase disk to 20GB ---
+  # Fixes "No space left on device" error
   root_block_device {
     volume_size = 20
     volume_type = "gp3"

@@ -21,6 +21,7 @@ pipeline {
         }
         stage('Task 2: Dynamic Inventory') {
             steps {
+                // Ensure no spaces around the IP for Ansible compatibility
                 bat "echo [splunk]>dynamic_inventory.ini"
                 bat "echo ${env.INSTANCE_IP}>>dynamic_inventory.ini"
             }
