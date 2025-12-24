@@ -86,7 +86,7 @@ pipeline {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Aadii']]) {
                     bat "terraform apply -var-file=${env.BRANCH_NAME}.tfvars -auto-approve -no-color"
                     script {
-                        // Captures output and uses Regex to strip out hidden ANSI color characters
+                        // Capture output and strip ANSI color characters
                         def ipRaw = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
                         env.INSTANCE_IP = ipRaw.replaceAll(/\u001B\[[;\\d]*m/, "").split('\n')[-1].trim()
                         
@@ -94,7 +94,6 @@ pipeline {
                         env.INSTANCE_ID = idRaw.replaceAll(/\u001B\[[;\\d]*m/, "").split('\n')[-1].trim()
                         
                         echo "======================================"
-                        echo "TASK 1: SUCCESS"
                         echo "CLEANED IP: ${env.INSTANCE_IP}"
                         echo "CLEANED ID: ${env.INSTANCE_ID}"
                         echo "======================================"
@@ -107,8 +106,6 @@ pipeline {
             steps {
                 bat "echo [splunk]>dynamic_inventory.ini"
                 bat "echo ${env.INSTANCE_IP}>>dynamic_inventory.ini"
-                
-                echo "--- VERIFYING DYNAMIC INVENTORY ---"
                 bat "type dynamic_inventory.ini"
             }
         }
@@ -130,14 +127,16 @@ pipeline {
                 script {
                     echo "Starting Ansible Configuration via WSL..."
                     
-                    // Fix permissions for the private key in WSL environment
-                    bat "wsl chmod 400 Aadii_new.pem"
-                    
-                    // Run Installation Playbook
-                    bat "wsl ansible-playbook -i dynamic_inventory.ini playbooks/splunk.yml --private-key Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'"
-                    
-                    // Run Health Check Playbook
-                    bat "wsl ansible-playbook -i dynamic_inventory.ini playbooks/test-splunk.yml --private-key Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'"
+                    /* We move the key to the WSL home directory (~/) because SSH 
+                    requires strict permissions (400) that Windows NTFS 
+                    folders (/mnt/c/) often do not support.
+                    */
+                    bat """
+                        wsl cp Aadii_new.pem ~/Aadii_new.pem
+                        wsl chmod 400 ~/Aadii_new.pem
+                        wsl ansible-playbook -i dynamic_inventory.ini playbooks/splunk.yml --private-key ~/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
+                        wsl ansible-playbook -i dynamic_inventory.ini playbooks/test-splunk.yml --private-key ~/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
+                    """
                     
                     echo "======================================"
                     echo "TASK 4: SUCCESS - SPLUNK IS READY"
@@ -149,7 +148,6 @@ pipeline {
         stage('Task 5: Infrastructure Cleanup') {
             steps {
                 script {
-                    // This creates a manual approval button in the Jenkins UI
                     def destroy = input(message: 'Do you want to destroy the infrastructure?', ok: 'Yes, Destroy')
                     if(destroy) {
                         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Aadii']]) {
