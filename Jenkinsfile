@@ -126,20 +126,16 @@ pipeline {
             steps {
                 script {
                     echo "Starting Ansible Configuration via WSL..."
-                    
-                    /* We move the key to the WSL home directory (~/) because SSH 
-                    requires strict permissions (400) that Windows NTFS 
-                    folders (/mnt/c/) often do not support.
-                    */
+                    // We use /tmp/ in WSL because the home directory (~/) has restricted permissions
                     bat """
-                        wsl cp Aadii_new.pem ~/Aadii_new.pem
-                        wsl chmod 400 ~/Aadii_new.pem
-                        wsl ansible-playbook -i dynamic_inventory.ini playbooks/splunk.yml --private-key ~/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
-                        wsl ansible-playbook -i dynamic_inventory.ini playbooks/test-splunk.yml --private-key ~/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
+                        wsl cp Aadii_new.pem /tmp/Aadii_new.pem
+                        wsl chmod 400 /tmp/Aadii_new.pem
+                        wsl ansible-playbook -i dynamic_inventory.ini playbooks/splunk.yml --private-key /tmp/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
+                        wsl ansible-playbook -i dynamic_inventory.ini playbooks/test-splunk.yml --private-key /tmp/Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'
                     """
                     
                     echo "======================================"
-                    echo "TASK 4: SUCCESS - SPLUNK IS READY"
+                    echo "TASK 4: SUCCESS"
                     echo "======================================"
                 }
             }
