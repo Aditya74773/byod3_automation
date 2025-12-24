@@ -12,10 +12,10 @@ provider "aws" {
 }
 
 resource "aws_security_group" "splunk_sg" {
-  name        = "splunk_security_group"
+  # name_prefix allows creating a new group with a unique ID before destroying the old one
+  name_prefix = "splunk-sg-" 
   description = "Allow SSH and Splunk Web UI"
 
-  # Prevents the "Still destroying" deadlock error
   lifecycle {
     create_before_destroy = true
   }
