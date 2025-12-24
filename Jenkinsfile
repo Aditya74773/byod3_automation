@@ -1,50 +1,21 @@
-pipeline {
-    agent any
-
-    environment {
-        // Task 2: Credentials and Environment
-        TF_IN_AUTOMATION = 'true'
-        TF_CLI_ARGS      = '-no-color'
+stage('Task 1: Provision & Output Capture') {
+    steps {
+        // Execute terraform apply with auto-approve
+        bat "terraform apply -var-file=${env.BRANCH_NAME}.tfvars -auto-approve"
         
-        // Using your specific credential IDs
-        // Note: credentials() helper works the same, but access variables differently in 'bat'
-        AWS_CREDS = credentials('AWS_Aadii')
-        SSH_CRED_ID = 'Aadii_id'
-    }
-
-    stages {
-        // Task 3: Initialization & Inspection
-        stage('Terraform Init & Inspect') {
-            steps {
-                // Use 'bat' for Windows
-                bat 'terraform init'
-                
-                // 'type' is the Windows equivalent of 'cat'
-                // Use %VARIABLE% syntax inside bat for environment variables
-                script {
-                    echo "Inspecting variables for branch: ${env.BRANCH_NAME}"
-                    bat "type ${env.BRANCH_NAME}.tfvars"
-                }
-            }
-        }
-
-        // Task 4: Planning
-        stage('Terraform Plan') {
-            steps {
-                // Passing the AWS keys directly from the environment
-                // In Windows 'bat', we use %VAR% instead of $VAR
-                bat "terraform plan -var-file=${env.BRANCH_NAME}.tfvars"
-            }
-        }
-
-        // Task 5: Manual Approval Gate (Dev Only)
-        stage('Validate Apply') {
-            when {
-                branch 'dev'
-            }
-            steps {
-                input message: "Review the plan above. Do you want to proceed with Apply?", ok: "Proceed"
-            }
+        script {
+            // Capture public IP into Jenkins env variable
+            def ipOut = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
+            env.INSTANCE_IP = ipOut.split("\n")[-1].trim() 
+            
+            // Capture Instance ID into Jenkins env variable
+            def idOut = bat(script: "terraform output -raw instance_id", returnStdout: true).trim()
+            env.INSTANCE_ID = idOut.split("\n")[-1].trim()
+            
+            // Print for Verification (Capture this for your screenshot)
+            echo "--- TASK 1 CAPTURE COMPLETE ---"
+            echo "Captured INSTANCE_IP: ${env.INSTANCE_IP}"
+            echo "Captured INSTANCE_ID: ${env.INSTANCE_ID}"
         }
     }
 }
