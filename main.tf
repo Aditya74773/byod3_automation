@@ -1,56 +1,30 @@
-# provider "aws" {
-#   region = "us-east-1" 
-# }
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
 
-# resource "aws_s3_bucket" "test_bucket" {
-#   bucket = var.bucket_name
-#   tags = {
-#     Name        = "BYOD-3-Automation-Test"
-#     Environment = terraform.workspace == "default" ? "main" : terraform.workspace
-#   }
-# }
+provider "aws" {
+  region = "us-east-1"
+}
 
-# variable "bucket_name" {
-#   type        = string
-#   description = "The globally unique name for the S3 bucket"
-# }
-
-# provider "aws" {
-#   region = "us-east-1"
-# }
-
-# resource "aws_instance" "splunk_server" {
-#   ami           = "ami-0ecb62995f68bb549" # Ubuntu 22.04 LTS
-#   instance_type = "t2.medium"             # Required for Splunk performance
-#   key_name      = "Aadiibyod"              # Must match your AWS Key Pair name
-
-#   tags = {
-#     Name = "Splunk-Server-Task1"
-#   }
-# }
-
-# # These outputs are CRITICAL for Task 1
-# output "instance_public_ip" {
-#   value = aws_instance.splunk_server.public_ip
-# }
-
-# output "instance_id" {
-#   value = aws_instance.splunk_server.id
-# }
-
+# Security Group for Task 1 & 4
 resource "aws_security_group" "splunk_sg" {
   name        = "splunk_security_group"
-  description = "Allow SSH and Splunk Web"
+  description = "Allow SSH and Splunk Web UI"
 
-  # SSH for Ansible
+  # SSH Access for Ansible
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # For labs, this is okay. In production, use your IP.
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Splunk Web UI
+  # Splunk Web UI Port
   ingress {
     from_port   = 8000
     to_port     = 8000
@@ -58,7 +32,7 @@ resource "aws_security_group" "splunk_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Outbound rules (allow server to download Splunk)
+  # Outbound Internet Access
   egress {
     from_port   = 0
     to_port     = 0
@@ -67,12 +41,19 @@ resource "aws_security_group" "splunk_sg" {
   }
 }
 
-# Update your instance to use this SG
+# EC2 Instance for Task 1
 resource "aws_instance" "splunk_server" {
-  ami                    = "ami-0ecb62995f68bb549"
-  instance_type          = "t2.medium"
-  key_name               = "Aadii_new"
-  vpc_security_group_ids = [aws_security_group.splunk_sg.id] # Add this line
+  ami           = "ami-0ecb62995f68bb549" # Ubuntu 22.04 LTS
+  instance_type = "t2.medium"           # 2 vCPU and 4GB RAM is better for Splunk
+  key_name      = "Aadii_new"
+
+  # --- CRITICAL FIX: Increased disk space to prevent "No space left on device" ---
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
+  vpc_security_group_ids = [aws_security_group.splunk_sg.id]
 
   tags = {
     Name = "Splunk-Server-Task1"
