@@ -8,6 +8,6 @@
       register: splunk_status
       failed_when: "'splunkd is running' not in splunk_status.stdout"
 
-    - name: Show Status
+    - name: Show status
       debug:
-        msg: "Splunk is UP and RUNNING!"
+        var: splunk_status.stdout
