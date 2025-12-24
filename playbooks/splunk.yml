@@ -11,6 +11,7 @@
       get_url:
         url: "https://download.splunk.com/products/splunk/releases/9.4.0/linux/splunk-9.4.0-6b4549925621-linux-2.6-amd64.deb"
         dest: "/tmp/splunk.deb"
+        mode: '0644'
 
     - name: Install Splunk package
       apt:
