@@ -1,0 +1,22 @@
+---
+- name: Install and Start Splunk
+  hosts: splunk
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Download Splunk Debian package
+      get_url:
+        url: "https://download.splunk.com/products/splunk/releases/9.1.1/linux/splunk-9.1.1-64e8434d780a-linux-2.6-amd64.deb"
+        dest: "/tmp/splunk.deb"
+
+    - name: Install Splunk package
+      apt:
+        deb: "/tmp/splunk.deb"
+
+    - name: Accept License and Start Splunk
+      command: /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt --seed-passwd changeme123
+      args:
+        creates: /opt/splunk/etc/splunk.secret
