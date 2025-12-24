@@ -7,7 +7,7 @@
       apt:
         update_cache: yes
 
-    - name: Remove any old corrupted package
+    - name: Remove old package
       file:
         path: /tmp/splunk.deb
         state: absent
