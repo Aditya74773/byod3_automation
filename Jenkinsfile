@@ -95,7 +95,7 @@ pipeline {
         }
         stage('Task 4: Splunk Installation & Testing') {
             steps {
-                // Using 'Aadii_new' as the credentialsId to match your Jenkins setup
+                // Using 'Aadii_new' as the credentialsId to match your Jenkins setupp
                 withCredentials([file(credentialsId: 'Aadii_new', variable: 'SECURE_KEY')]) {
                     script {
                         echo "Deploying Splunk using secure credentials..."
