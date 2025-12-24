@@ -12,8 +12,7 @@ provider "aws" {
 }
 
 resource "aws_security_group" "splunk_sg" {
-  # name_prefix allows creating a new group with a unique ID before destroying the old one
-  name_prefix = "splunk-sg-" 
+  name_prefix = "splunk-sg-"
   description = "Allow SSH and Splunk Web UI"
 
   lifecycle {
@@ -46,6 +45,12 @@ resource "aws_instance" "splunk_server" {
   ami           = "ami-0ecb62995f68bb549" 
   instance_type = "t2.medium"           
   key_name      = "Aadii_new"
+
+  # --- MANDATORY FIX: Increase disk to 20GB ---
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   vpc_security_group_ids = [aws_security_group.splunk_sg.id]
 
