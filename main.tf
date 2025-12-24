@@ -20,7 +20,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "splunk_server" {
-  ami           = "ami-0e2c8ccd4e1f9c169" # Ubuntu 22.04 LTS
+  ami           = "ami-0ecb62995f68bb549" # Ubuntu 22.04 LTS
   instance_type = "t2.medium"             # Required for Splunk performance
   key_name      = "Aadii_id"              # Must match your AWS Key Pair name
 
