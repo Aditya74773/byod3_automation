@@ -9,7 +9,7 @@
 
     - name: Download Splunk Debian package
       get_url:
-        url: "https://download.splunk.com/products/splunk/releases/9.1.1/linux/splunk-9.1.1-64e8434d780a-linux-2.6-amd64.deb"
+        url: "https://download.splunk.com/products/splunk/releases/9.4.0/linux/splunk-9.4.0-6b4549925621-linux-2.6-amd64.deb"
         dest: "/tmp/splunk.deb"
 
     - name: Install Splunk package
