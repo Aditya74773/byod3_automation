@@ -7,13 +7,15 @@
       apt:
         update_cache: yes
 
-    - name: Remove corrupted package if exists
+    - name: Remove any old corrupted package
       file:
-        path: "/tmp/splunk.deb"
+        path: /tmp/splunk.deb
         state: absent
 
-    - name: Download Splunk using wget
-      shell: "wget -O /tmp/splunk.deb 'https://download.splunk.com/products/splunk/releases/9.3.3/linux/splunk-9.3.3-09095690b224-linux-2.6-amd64.deb'"
+    - name: Download Splunk Enterprise 10.0.2
+      shell: 'wget -O /tmp/splunk.deb "https://download.splunk.com/products/splunk/releases/10.0.2/linux/splunk-10.0.2-e2d18b4767e9-linux-amd64.deb"'
+      args:
+        warn: false
 
     - name: Install Splunk package
       apt:
