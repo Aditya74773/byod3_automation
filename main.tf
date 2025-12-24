@@ -38,11 +38,42 @@
 #   value = aws_instance.splunk_server.id
 # }
 
+resource "aws_security_group" "splunk_sg" {
+  name        = "splunk_security_group"
+  description = "Allow SSH and Splunk Web"
+
+  # SSH for Ansible
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # For labs, this is okay. In production, use your IP.
+  }
+
+  # Splunk Web UI
+  ingress {
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Outbound rules (allow server to download Splunk)
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Update your instance to use this SG
 resource "aws_instance" "splunk_server" {
-  ami           = "ami-0ecb62995f68bb549"
-  instance_type = "t2.medium"
-  key_name      = "Aadii_new"  # Change this to your new key name
-  
+  ami                    = "ami-0ecb62995f68bb549"
+  instance_type          = "t2.medium"
+  key_name               = "Aadii_new"
+  vpc_security_group_ids = [aws_security_group.splunk_sg.id] # Add this line
+
   tags = {
     Name = "Splunk-Server-Task1"
   }
