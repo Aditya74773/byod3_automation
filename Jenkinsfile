@@ -72,88 +72,21 @@
 //     }
 // }
 
-
-pipeline {
-    agent any
-    
-    environment {
-        TF_IN_AUTOMATION = 'true'
-        AWS_DEFAULT_REGION = 'us-east-1'
-    }
-
-    stages {
-        stage('Task 1: Provision & Output Capture') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Aadii']]) {
-                    bat "terraform apply -var-file=${env.BRANCH_NAME}.tfvars -auto-approve -no-color"
-                    script {
-                        def ipOut = bat(script: "terraform output -raw instance_public_ip", returnStdout: true).trim()
-                        env.INSTANCE_IP = ipOut.split("\n")[-1].trim() 
-                        def idOut = bat(script: "terraform output -raw instance_id", returnStdout: true).trim()
-                        env.INSTANCE_ID = idOut.split("\n")[-1].trim()
-                        
-                        echo "======================================"
-                        echo "TASK 1: SUCCESS"
-                        echo "IP: ${env.INSTANCE_IP}"
-                        echo "ID: ${env.INSTANCE_ID}"
-                        echo "======================================"
-                    }
-                }
-            }
-        }
-
-        stage('Task 2: Dynamic Inventory') {
-            steps {
-                bat "echo [splunk]>dynamic_inventory.ini"
-                bat "echo ${env.INSTANCE_IP}>>dynamic_inventory.ini"
-                bat "type dynamic_inventory.ini"
-            }
-        }
-
-        stage('Task 3: AWS Health Status Verification') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Aadii']]) {
-                    script {
-                        echo "Waiting for instance ${env.INSTANCE_ID} to pass health checks..."
-                        bat "aws ec2 wait instance-status-ok --instance-ids ${env.INSTANCE_ID} --region us-east-1"
-                        echo "TASK 3: Instance is HEALTHY"
-                    }
-                }
-            }
-        }
-
-        stage('Task 4: Splunk Installation & Testing') {
-            steps {
-                script {
-                    echo "Starting Ansible Configuration via WSL..."
-                    
-                    // Fix key permissions for Linux/WSL environment
-                    bat "wsl chmod 400 Aadii_id.pem"
-                    
-                    // Run Installation
-                    bat "wsl ansible-playbook -i dynamic_inventory.ini playbooks/splunk.yml --private-key Aadii_id.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'"
-                    
-                    // Run Health Check Test
-                    bat "wsl ansible-playbook -i dynamic_inventory.ini playbooks/test-splunk.yml --private-key Aadii_id.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'"
-                    
-                    echo "TASK 4: SUCCESS - SPLUNK IS RUNNING"
-                }
-            }
-        }
-
-        stage('Task 5: Infrastructure Cleanup') {
-            steps {
-                // Change 'input' to 'true' if you want it to wait for you to see the result before deleting
-                script {
-                    def destroy = input(message: 'Do you want to destroy the infrastructure?', ok: 'Yes, Destroy')
-                    if(destroy) {
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Aadii']]) {
-                            bat "terraform destroy -var-file=${env.BRANCH_NAME}.tfvars -auto-approve -no-color"
-                            echo "TASK 5: CLEANUP COMPLETE"
-                        }
-                    }
-                }
-            }
+stage('Task 4: Splunk Installation & Testing') {
+    steps {
+        script {
+            echo "Starting Ansible Configuration via WSL..."
+            
+            // Update filename here
+            bat "wsl chmod 400 Aadii_new.pem"
+            
+            // Update --private-key filename here
+            bat "wsl ansible-playbook -i dynamic_inventory.ini playbooks/splunk.yml --private-key Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'"
+            
+            // Update --private-key filename here too
+            bat "wsl ansible-playbook -i dynamic_inventory.ini playbooks/test-splunk.yml --private-key Aadii_new.pem -u ubuntu --ssh-common-args='-o StrictHostKeyChecking=no'"
+            
+            echo "TASK 4: SUCCESS"
         }
     }
 }
