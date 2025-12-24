@@ -14,8 +14,6 @@
 
     - name: Download Splunk Enterprise 10.0.2
       shell: 'wget -O /tmp/splunk.deb "https://download.splunk.com/products/splunk/releases/10.0.2/linux/splunk-10.0.2-e2d18b4767e9-linux-amd64.deb"'
-      args:
-        warn: false
 
     - name: Install Splunk package
       apt:
